@@ -57,6 +57,8 @@ let frameCounter = 0;
 let detectMs = 0;
 let detectRate = 0;
 let detectCount = 0;
+let seenIds = []; // ids found by the detector recently (any id, for diagnosing a wrong ?id=)
+let seenAt = -Infinity;
 
 // flip auto-calibration: if we never find a marker, alternate the vertical flip until
 // one is found, then lock it (the camera texture orientation differs between devices).
@@ -80,6 +82,7 @@ worker.onmessage = (e) => {
   inflight.delete(frameId);
   detectMs = detectMs * 0.9 + ms * 0.1;
   detectCount++;
+  if (markers.length) { seenIds = markers.map((k) => k.id); seenAt = performance.now(); }
   if (!meta) return;
 
   const m = markers.find((k) => CONFIG.markerId < 0 || k.id === CONFIG.markerId);
@@ -246,7 +249,15 @@ function handleCamera(frame, pose, now, dt) {
       touchedGl = true;
     }
   }
-  if (touchedGl) renderer.resetState(); // we touched GL state behind three.js's back
+  if (touchedGl) {
+    // We touched GL state behind three.js's back, so its state cache must be reset.
+    // resetState() also forgets the current render target, which in XR is the session's
+    // framebuffer (set by three before this callback). Without restoring it, every frame
+    // that touched the camera rendered to the invisible default framebuffer → flicker.
+    const rt = renderer.getRenderTarget();
+    renderer.resetState();
+    renderer.setRenderTarget(rt);
+  }
 }
 
 function drawPreview(meta) {
@@ -287,7 +298,8 @@ function updateHud(dt) {
   if (tracker.state !== 'tracking') stats.marker = '-';
   ui.mode.textContent = tracker.trackingLost ? '3DoF · device tracking lost' : label;
   ui.mode.className = cls;
-  ui.stats.textContent = `${stats.fps} fps · detect ${stats.detect} · ${grabber ? `${grabber.w}×${grabber.h}` : ''}${flipLocked ? '' : ' · calibrating'}`;
+  const seen = performance.now() - seenAt < 1000 ? `sees #${seenIds.join(',#')}` : 'no marker in view';
+  ui.stats.textContent = `${stats.fps} fps · detect ${stats.detect} · ${grabber ? `${grabber.w}×${grabber.h}` : ''} · ${seen}${flipLocked ? '' : ' · calibrating'}`;
 }
 
 window.addEventListener('resize', () => {
