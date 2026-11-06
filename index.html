@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Marker Workspace</title>
+  <style>
+    :root { --bg: #0d1117; --fg: #e8ecf4; --muted: #9aa4b8; --accent: #4f8cff; --ok: #3ddc97; --warn: #ffb547; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); font: 16px/1.5 system-ui, sans-serif; }
+    canvas { display: block; }
+    body.in-ar { background: transparent; }
+    body.in-ar > canvas, body.in-ar #landing { display: none; }
+
+    #landing { position: fixed; inset: 0; display: grid; place-items: center; padding: 24px 16px; z-index: 1; }
+    .card { max-width: 440px; }
+    h1 { font-size: 28px; margin: 0 0 8px; }
+    p { color: var(--muted); margin: 0 0 16px; }
+    ol { color: var(--muted); padding-left: 20px; margin: 0 0 20px; }
+    a { color: var(--accent); }
+    #start { width: 100%; padding: 16px; font: 600 18px system-ui; color: #fff; background: var(--accent); border: 0; border-radius: 12px; }
+    #start:disabled { opacity: 0.4; }
+    #support { color: var(--warn); margin-top: 12px; min-height: 1.5em; }
+    #cfg { font-family: ui-monospace, monospace; color: var(--fg); }
+
+    #overlay { display: none; position: fixed; inset: 0; pointer-events: none; font: 14px/1.4 system-ui, sans-serif; color: #fff; }
+    body.in-ar #overlay { display: block; }
+    .hud { position: absolute; left: 12px; right: 12px; top: max(12px, env(safe-area-inset-top)); display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+    #hud-mode { padding: 6px 12px; border-radius: 999px; font-weight: 600; background: rgba(0,0,0,0.55); }
+    #hud-mode.tracking { background: rgba(30,140,90,0.85); }
+    #hud-mode.held { background: rgba(40,90,190,0.85); }
+    #hud-mode.threedof, #hud-mode.searching { background: rgba(170,110,20,0.85); }
+    #hud-stats { padding: 2px 10px; border-radius: 8px; background: rgba(0,0,0,0.45); font: 12px ui-monospace, monospace; }
+    .bar { position: absolute; left: 12px; right: 12px; bottom: max(16px, env(safe-area-inset-bottom)); display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+    .bar button { pointer-events: auto; padding: 10px 14px; border-radius: 10px; border: 0; font: 600 14px system-ui; color: #fff; background: rgba(0,0,0,0.6); }
+    #preview { display: none; position: absolute; right: 12px; top: max(12px, env(safe-area-inset-top)); width: 120px; border: 1px solid rgba(255,255,255,0.4); }
+    #preview.show { display: block; }
+  </style>
+</head>
+<body>
+  <div id="landing">
+    <div class="card">
+      <h1>Marker Workspace</h1>
+      <p>Mixed-reality windows anchored to a printed marker. 6DoF while the marker is known; WebXR world tracking keeps them in place after it leaves view.</p>
+      <ol>
+        <li>Print the <a href="marker.html" target="_blank">marker</a> at 100% scale (black square = <span id="cfg"></span>).</li>
+        <li>Put it on a desk or wall, in good light.</li>
+        <li>Tap Start, then point the phone at the marker.</li>
+      </ol>
+      <button id="start">Start AR</button>
+      <div id="support"></div>
+    </div>
+  </div>
+
+  <div id="overlay">
+    <div class="hud">
+      <div id="hud-mode" class="searching">3DoF · looking for marker</div>
+      <div id="hud-stats"></div>
+    </div>
+    <canvas id="preview"></canvas>
+    <div class="bar">
+      <button id="btn-lost"></button>
+      <button id="btn-recenter">Recenter</button>
+      <button id="btn-debug">Camera</button>
+      <button id="btn-exit">Exit</button>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
